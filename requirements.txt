@@ -15,9 +15,11 @@ whitenoise
 # Payment Gateway
 razorpay
 
-# PDF Generation (Fixes the ModuleNotFoundError)
+# PDF & QR Generation (Fixes the ModuleNotFoundErrors)
 xhtml2pdf
 reportlab
+qrcode[pil]
+Pillow
 
 # Utilities
 requests
