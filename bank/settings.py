@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-0npvig*1%0dbg_x&n_ygzt*0^%&kt$@fvl)(xr=xk=dte-m9!t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1','10.146.111.5']
+ALLOWED_HOSTS = ['*', 'localhost', '127.0.0.1','10.146.111.5','https://lpu-bank.onrender.com']
 
 CSRF_TRUSTED_ORIGINS = [
     'https://*.ngrok-free.app',
