@@ -15,6 +15,10 @@ whitenoise
 # Payment Gateway
 razorpay
 
+# PDF Generation (Fixes the ModuleNotFoundError)
+xhtml2pdf
+reportlab
+
 # Utilities
 requests
 python-dotenv
