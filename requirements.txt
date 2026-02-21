@@ -1,0 +1,20 @@
+# Core Framework & API
+django>=5.2
+djangorestframework
+djangorestframework-simplejwt
+
+# Database & Production Server
+gunicorn
+dj-database-url
+psycopg2-binary
+
+# Security & Static Files
+django-cors-headers
+whitenoise
+
+# Payment Gateway
+razorpay
+
+# Utilities
+requests
+python-dotenv
