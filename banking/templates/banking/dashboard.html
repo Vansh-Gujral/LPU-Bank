@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Permissions-Policy" content="accelerometer=*, gyroscope=*, magnetometer=*, payment=*">
+    <title>Dashboard | LPU Bank Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; scroll-behavior: smooth; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        .emerald-glow { box-shadow: 0 0 50px -15px rgba(16, 185, 129, 0.2); }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen">
+
+    <nav class="border-b border-slate-800 bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent italic">LPU BANK</h1>
+            <div class="flex gap-6 items-center">  
+                <div class="hidden md:flex flex-col text-right">
+                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Authorized User</span>
+                    <span class="text-emerald-400 font-bold" id="user-name">...</span>
+                </div>
+                <button onclick="logout()" class="text-xs font-bold bg-red-500/10 text-red-400 px-5 py-2 rounded-xl hover:bg-red-500 hover:text-white transition-all border border-red-500/20">
+                    <i class="fas fa-power-off mr-2"></i>LOGOUT
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8 animate__animated animate__fadeIn">
+        
+        <div class="grid lg:grid-cols-3 gap-8">
+            
+            <div class="lg:col-span-2 bg-gradient-to-br from-slate-800 to-slate-900 p-10 rounded-[3rem] border border-slate-700 emerald-glow relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-8 opacity-10 group-hover:scale-110 transition-transform duration-700">
+                    <i class="fas fa-microchip text-9xl"></i>
+                </div>
+                <div class="relative z-10">
+                    <p class="text-slate-400 text-[10px] font-bold tracking-[0.3em] uppercase mb-2">Available Protocol Balance</p>
+                    <h2 class="text-6xl md:text-7xl font-black mb-12 tracking-tighter">₹ <span id="balance">0.00</span></h2>
+                    <div class="flex justify-between items-end">
+                        <div class="space-y-1">
+                            <p class="text-slate-500 text-[10px] font-bold uppercase tracking-widest">Stateless Account ID</p>
+                            <p class="font-mono text-xl tracking-widest text-emerald-400" id="acc-num">•••• •••• ••••</p>
+                        </div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" class="h-10 opacity-60">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-slate-900/50 backdrop-blur-sm border border-slate-800 p-6 rounded-[3rem] space-y-4 shadow-xl">
+                <h3 class="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mb-4 ml-2">Secure Operations</h3>
+                
+                <a href="/transfer" class="flex items-center gap-4 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center text-slate-900 shadow-lg shadow-emerald-500/20 group-hover:rotate-12 transition-transform">
+                        <i class="fas fa-paper-plane"></i>
+                    </div>
+                    <div><p class="font-bold text-sm">Send Money</p><p class="text-[10px] text-slate-500 italic uppercase">P2P Transfer</p></div>
+                </a>
+
+                <a href="/qr" class="flex items-center gap-4 p-4 rounded-2xl bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-violet-500 flex items-center justify-center text-slate-900 shadow-lg shadow-violet-500/20 group-hover:rotate-12 transition-transform">
+                        <i class="fas fa-qrcode"></i>
+                    </div>
+                    <div><p class="font-bold text-sm">QR Pay</p><p class="text-[10px] text-slate-500 italic uppercase">Scan & Receive</p></div>
+                </a>
+
+                <button onclick="openDepositModal()" class="w-full flex items-center gap-4 p-4 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 transition-all text-left group">
+                    <div class="w-12 h-12 rounded-xl bg-cyan-500 flex items-center justify-center text-slate-900 shadow-lg shadow-cyan-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-plus"></i>
+                    </div>
+                    <div><p class="font-bold text-sm">Add Funds</p><p class="text-[10px] text-slate-500 italic uppercase">Razorpay Instant</p></div>
+                </button>
+
+                <a href="/atm-request" class="flex items-center gap-4 p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500 flex items-center justify-center text-slate-900 shadow-lg shadow-blue-500/20 group-hover:-rotate-12 transition-transform">
+                        <i class="fas fa-university"></i>
+                    </div>
+                    <div><p class="font-bold text-sm">ATM Token</p><p class="text-[10px] text-slate-500 italic uppercase">Withdraw Node</p></div>
+                </a>
+
+                <a href="/claim-deposit" class="flex items-center gap-4 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 hover:bg-amber-500/20 transition-all group">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500 flex items-center justify-center text-slate-900 shadow-lg shadow-amber-500/20 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-hand-holding-usd"></i>
+                    </div>
+                    <div><p class="font-bold text-sm">Claim Code</p><p class="text-[10px] text-slate-500 italic uppercase">Deposit Node</p></div>
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-slate-900/50 border border-slate-800 rounded-[3rem] overflow-hidden shadow-xl">
+            <div class="p-8 border-b border-slate-800 flex flex-col md:row justify-between items-center gap-4">
+                <div><h3 class="font-bold text-xl text-white">Protocol Ledger</h3><p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Real-time stateless history</p></div>
+                <button onclick="downloadStatement()" class="text-[10px] font-black bg-white text-slate-900 px-8 py-3 rounded-xl hover:bg-emerald-400 transition-all uppercase tracking-widest shadow-lg shadow-white/5">
+                    <i class="fas fa-file-pdf mr-2"></i>Download PDF
+                </button>
+            </div>
+            <div id="transaction-list" class="divide-y divide-slate-800/50 min-h-[150px]">
+                <div class="p-12 text-center text-slate-600 animate-pulse font-bold italic">Synchronizing with blockchain...</div>
+            </div>
+        </div>
+    </main>
+
+    <div id="depositModal" class="fixed inset-0 z-[100] hidden items-center justify-center px-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="glass max-w-sm w-full p-10 rounded-[3rem] text-center shadow-2xl animate__animated animate__zoomIn">
+            <div class="w-16 h-16 bg-cyan-500/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-cyan-500/20">
+                <i class="fas fa-wallet text-2xl text-cyan-400"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2 tracking-tight uppercase italic">Add Funds</h2>
+            <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest mb-10">Instant Razorpay Gateway</p>
+            
+            <div class="space-y-8">
+                <div class="relative">
+                    <span class="absolute left-6 top-1/2 -translate-y-1/2 text-cyan-500 font-bold text-xl">₹</span>
+                    <input type="number" id="depositAmount" class="w-full bg-slate-800/50 border border-slate-700 rounded-3xl pl-12 pr-6 py-5 focus:outline-none focus:border-cyan-500 transition-all text-white text-4xl font-black" placeholder="500">
+                </div>
+                
+                <div class="flex gap-4">
+                    <button onclick="closeDepositModal()" class="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-400 font-bold py-4 rounded-2xl transition-all">CANCEL</button>
+                    <button onclick="processDeposit()" id="confirmDepositBtn" class="flex-1 bg-cyan-500 hover:bg-cyan-400 text-slate-900 font-black py-4 rounded-2xl transition-all shadow-lg shadow-cyan-500/20 uppercase tracking-tighter">CONFIRM</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadDashboard() {
+            const token = localStorage.getItem('access');
+            if (!token) { window.location.href = '/login'; return; }
+
+            try {
+                const response = await fetch('/api/dashboard/', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (response.status === 401) { logout(); return; }
+
+                const data = await response.json();
+                
+                document.getElementById('balance').innerText = parseFloat(data.account.balance).toLocaleString('en-IN', {minimumFractionDigits: 2});
+                document.getElementById('acc-num').innerText = data.account.account_number;
+                document.getElementById('user-name').innerText = data.account.user.username;
+
+                const list = document.getElementById('transaction-list');
+                list.innerHTML = '';
+
+                if (data.transactions.length === 0) {
+                    list.innerHTML = '<div class="p-12 text-center text-slate-700 font-bold">NO RECENT ACTIVITY DETECTED</div>';
+                    return;
+                }
+
+                data.transactions.forEach(tx => {
+                    const isCredit = tx.transaction_type.includes('DEPOSIT');
+                    list.innerHTML += `
+                        <div class="p-6 flex justify-between items-center hover:bg-white/5 transition-all group">
+                            <div class="flex gap-6 items-center">
+                                <div class="w-12 h-12 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center group-hover:border-emerald-500/30 transition-all">
+                                    <i class="fas ${isCredit ? 'fa-arrow-down text-emerald-400' : 'fa-arrow-up text-red-400'}"></i>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-white uppercase tracking-tight">${tx.description || 'Electronic Transfer'}</p>
+                                    <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">
+                                        ${new Date(tx.timestamp).toLocaleString('en-IN', {day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'})}
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xl font-black ${isCredit ? 'text-emerald-400' : 'text-slate-300'}">
+                                    ${isCredit ? '+' : '-'} ₹${parseFloat(tx.amount).toLocaleString('en-IN')}
+                                </p>
+                                <p class="text-[8px] font-black text-slate-600 uppercase tracking-widest">${tx.status}</p>
+                            </div>
+                        </div>`;
+                });
+            } catch (err) { console.error('Ledger Sync Failed', err); }
+        }
+
+        function openDepositModal() {
+            document.getElementById('depositModal').classList.replace('hidden', 'flex');
+            document.getElementById('depositAmount').focus();
+        }
+
+        function closeDepositModal() {
+            const modal = document.getElementById('depositModal');
+            modal.classList.add('animate__zoomOut');
+            setTimeout(() => {
+                modal.classList.replace('flex', 'hidden');
+                modal.classList.remove('animate__zoomOut');
+                document.getElementById('depositAmount').value = '';
+            }, 400);
+        }
+
+        // --- RAZORPAY HANDLER ---
+        async function processDeposit() {
+            const amountInput = document.getElementById('depositAmount');
+            const amount = amountInput.value;
+            const btn = document.getElementById('confirmDepositBtn');
+
+            if (!amount || amount <= 0) {
+                alert("Please enter a valid amount.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+
+            const token = localStorage.getItem('access');
+            try {
+                const response = await fetch('/api/deposit/initiate/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}` 
+                    },
+                    body: JSON.stringify({ amount: amount })
+                });
+
+                const order = await response.json();
+                console.log("ORDER FROM BACKEND:", order);
+                if (!response.ok) throw new Error(order.error || "Initialization failed");
+
+                closeDepositModal();
+
+                const options = {
+                    "key": order.razorpay_merchant_key,
+                    "amount": order.amount,
+                    "currency": "INR",
+                    "name": "Vansh Bank Protocol",
+                    "description": "Secure Stateless Deposit",
+                    "order_id": order.order_id,
+                    "retry": { "enabled": false },
+                    "redirect": false,
+                    "handler": async function (resp) {
+                        document.body.insertAdjacentHTML('beforeend', 
+                            '<div id="vOverlay" class="fixed inset-0 z-[200] bg-slate-950/95 flex items-center justify-center font-bold text-emerald-400 animate__animated animate__fadeIn">VERIFYING LEDGER...</div>'
+                        );
+                        try {
+                            const verify = await fetch('/api/deposit/callback/', {
+                                method: 'POST',
+                                headers: { 
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify(resp)
+                            });
+                            
+                            const vOverlay = document.getElementById('vOverlay');
+                            if (vOverlay) vOverlay.remove();
+                            
+                            if (verify.ok) {
+                                window.location.href = '/deposit/success/';
+                            } else {
+                                window.location.href = '/deposit/failure/';
+                            }
+                        } catch (err) {
+                            console.error('Verification failed', err);
+                            window.location.href = '/deposit/failure/';
+                        }
+                    },
+                    "prefill": { "name": order.user_name, "email": order.user_email },
+                    "theme": { "color": "#10b981" },
+                    "modal": {
+                        "escape": false,
+                        "ondismiss": function() {
+                            btn.disabled = false;
+                            btn.innerText = "CONFIRM";
+                        }
+                    }
+                };
+
+                const rzp = new Razorpay(options);
+                rzp.open();
+
+            } catch (err) {
+                alert("System Error: " + err.message);
+                btn.disabled = false;
+                btn.innerText = "CONFIRM";
+            }
+        }
+
+        async function downloadStatement() {
+            const token = localStorage.getItem('access');
+            const res = await fetch('/api/dashboard/', { headers: { 'Authorization': `Bearer ${token}` }});
+            const data = await res.json();
+            if (data.account) window.location.href = `/api/download-statement/?uid=${data.account.user.id}`;
+        }
+
+        function logout() { localStorage.clear(); window.location.href = '/login'; }
+        loadDashboard();
+        setInterval(loadDashboard, 60000);
+    </script>
+</body>
+</html>

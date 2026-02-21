@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @page { size: a4 portrait; margin: 2cm; }
+        body { font-family: Helvetica, Arial, sans-serif; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px; }
+        .details-table { width: 100%; margin: 20px 0; }
+        .tx-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .tx-table th { background-color: #f2f2f2; text-align: left; padding: 8px; border: 1px solid #ddd; }
+        .tx-table td { padding: 8px; border: 1px solid #ddd; font-size: 10px; }
+        .footer { position: fixed; bottom: 0; text-align: center; font-size: 9px; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>MyBank Digital Statement</h1>
+        <p>Generated on: {{ now }}</p>
+    </div>
+
+    <table class="details-table">
+        <tr>
+            <td><strong>Customer:</strong> {{ user.username }}</td>
+            <td align="right"><strong>A/C No:</strong> {{ account.account_number }}</td>
+        </tr>
+        <tr>
+            <td><strong>UPI ID:</strong> {{ account.upi_id }}</td>
+            <td align="right"><strong>Current Balance:</strong> ₹{{ account.balance }}</td>
+        </tr>
+    </table>
+
+    <h3>Transaction Summary</h3>
+    <table class="tx-table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Amount</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for tx in transactions %}
+            <tr>
+                <td>{{ tx.timestamp|date:"d M Y, H:i" }}</td>
+                <td>{{ tx.transaction_type }}</td>
+                <td>₹{{ tx.amount }}</td>
+                <td>{{ tx.status }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        This is a computer-generated document and does not require a signature.
+    </div>
+</body>
+</html>

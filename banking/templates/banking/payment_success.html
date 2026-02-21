@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deposit Successful | LPU Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .success-glow { box-shadow: 0 0 60px -10px rgba(16, 185, 129, 0.4); }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200 min-h-screen flex items-center justify-center p-4">
+
+    <div class="glass max-w-md w-full p-10 rounded-[3rem] text-center success-glow animate__animated animate__zoomIn">
+        <div class="w-24 h-24 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-8 animate__animated animate__bounceIn animate__delay-1s">
+            <i class="fas fa-check text-4xl text-slate-900"></i>
+        </div>
+
+        <h1 class="text-3xl font-bold text-white mb-2 tracking-tight">Funds Deposited!</h1>
+        <p class="text-slate-500 text-sm mb-10 leading-relaxed uppercase tracking-widest font-bold">Protocol Ledger Updated</p>
+
+        <div class="bg-slate-950/50 rounded-3xl p-6 mb-10 border border-white/5 space-y-4">
+            <div class="flex justify-between text-xs">
+                <span class="text-slate-500 font-bold uppercase tracking-widest">Status</span>
+                <span class="text-emerald-400 font-black italic">VERIFIED</span>
+            </div>
+            <div class="flex justify-between text-xs">
+                <span class="text-slate-500 font-bold uppercase tracking-widest">Gateway</span>
+                <span class="text-white font-bold">RAZORPAY v2</span>
+            </div>
+            <div class="h-px bg-white/5 w-full"></div>
+            <p class="text-[10px] text-slate-600 font-medium">Your balance will reflect the changes instantly due to our stateless architecture.</p>
+        </div>
+
+        <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-6">
+            <div id="redirectProgress" class="bg-emerald-500 h-full w-full transition-all duration-[4000ms] ease-linear"></div>
+        </div>
+
+        <button onclick="window.location.href='/dashboard'" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20">
+            RETURN TO DASHBOARD
+        </button>
+    </div>
+
+    <script>
+        window.onload = function() {
+            // Start progress bar animation
+            setTimeout(() => {
+                document.getElementById('redirectProgress').style.width = '0%';
+            }, 100);
+
+            // Auto-redirect after 4 seconds
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 4000);
+        };
+    </script>
+</body>
+</html>

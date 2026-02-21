@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM Terminal | Vansh Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .success-glow { box-shadow: 0 0 50px -10px rgba(16, 185, 129, 0.4); }
+    </style>
+</head>
+<body class="bg-[#020617] text-slate-200 min-h-screen flex items-center justify-center p-4">
+
+    {% if success_msg %}
+    <div id="successModal" class="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-slate-950/80 backdrop-blur-sm">
+        <div class="glass max-w-sm w-full p-8 rounded-[2.5rem] text-center success-glow animate__animated animate__zoomIn">
+            <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 animate__animated animate__bounceIn animate__delay-1s">
+                <i class="fas fa-check text-3xl text-slate-900"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Transaction Successful</h2>
+            <p class="text-slate-400 text-sm mb-8 leading-relaxed">{{ success_msg }}</p>
+            
+            <button onclick="closeModal()" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20">
+                DISMISS
+            </button>
+            
+            <div class="mt-6 flex justify-center gap-2">
+                <div class="w-1 h-1 rounded-full bg-emerald-500/50"></div>
+                <div class="w-1 h-1 rounded-full bg-emerald-500/50"></div>
+                <div class="w-1 h-1 rounded-full bg-emerald-500/50"></div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="w-full max-w-lg bg-slate-900 border-4 border-slate-800 p-8 md:p-12 rounded-[3rem] shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-24 -right-24 w-48 h-48 bg-emerald-500/5 blur-[80px] rounded-full"></div>
+
+        <div class="text-center mb-10 relative z-10">
+            <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/10 rounded-3xl mb-6 border border-emerald-500/20 shadow-inner">
+                <i class="fas fa-fingerprint text-3xl text-emerald-500"></i>
+            </div>
+            <h2 class="text-3xl font-black text-white tracking-tighter uppercase">Vault Access</h2>
+            <p class="text-slate-500 text-xs font-bold tracking-widest mt-2 uppercase">Enter Token for Cash Out</p>
+        </div>
+
+        {% if error %}
+        <div class="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl animate__animated animate__shakeX">
+            <p class="text-red-400 text-xs font-bold text-center italic">
+                <i class="fas fa-exclamation-circle mr-2"></i> {{ error }}
+            </p>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-8 relative z-10" id="atmForm">
+            {% csrf_token %}
+            <div class="space-y-4">
+                <input type="text" name="token" maxlength="6" required 
+                       oninput="this.value = this.value.replace(/[^0-9]/g, '');"
+                       class="w-full bg-slate-950 border-2 border-slate-800 rounded-[2rem] px-6 py-6 focus:outline-none focus:border-emerald-500 transition-all text-white text-5xl font-black tracking-[0.5em] text-center placeholder-slate-900" 
+                       placeholder="000000">
+            </div>
+
+            <button type="submit" id="submitBtn" class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-6 rounded-[2rem] transition-all transform active:scale-95 shadow-xl shadow-emerald-500/10 text-xl tracking-tighter">
+                AUTHENTICATE & WITHDRAW
+            </button>
+        </form>
+
+        <div class="mt-10 pt-8 border-t border-slate-800 text-center opacity-30">
+            <p class="text-[10px] text-slate-400 font-black uppercase tracking-[0.5em]">Hardware Node // #VNS-VAULT-7</p>
+        </div>
+    </div>
+
+    <script>
+        // Modal Logic
+        function closeModal() {
+            const modal = document.getElementById('successModal');
+            modal.classList.add('animate__zoomOut');
+            setTimeout(() => {
+                modal.style.display = 'none';
+                // Optional: redirect to dashboard after closing
+                // window.location.href = '/dashboard/';
+            }, 500);
+        }
+
+        // Add loading state to button
+        document.getElementById('atmForm').onsubmit = function() {
+            const btn = document.getElementById('submitBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-circle-notch fa-spin mr-2"></i> PROCESSING...';
+        };
+    </script>
+</body>
+</html>

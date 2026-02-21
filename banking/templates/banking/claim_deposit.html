@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Claim Deposit | LPU Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#0f172a] text-slate-200 font-sans min-h-screen">
+
+    <nav class="border-b border-slate-800 bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/dashboard" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-all">
+                <i class="fas fa-arrow-left"></i>
+                <span class="font-bold uppercase tracking-widest text-sm">Back</span>
+            </a>
+            <h1 class="text-xl font-black tracking-tighter text-white">CLAIM DEPOSIT</h1>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-hand-holding-usd"></i>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-xl mx-auto p-6 mt-12">
+        <div class="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl animate__animated animate__fadeInUp">
+            <div class="text-center mb-10">
+                <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/20">
+                    <i class="fas fa-ticket-alt text-3xl text-emerald-500"></i>
+                </div>
+                <h2 class="text-3xl font-bold text-white mb-2">Redeem Token</h2>
+                <p class="text-slate-500">Enter the 6-digit reference code to claim your cash deposit instantly.</p>
+            </div>
+
+            <form id="claimForm" class="space-y-8">
+                <div class="space-y-4 text-center">
+                    <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Reference Code</label>
+                    <input type="text" id="ref_code" maxlength="6" required 
+                           class="w-full bg-slate-800/50 border border-slate-700 rounded-3xl px-6 py-5 focus:outline-none focus:border-emerald-500 transition-all text-white text-4xl font-black tracking-[0.5em] text-center placeholder-slate-800" 
+                           placeholder="000000">
+                </div>
+
+                <button type="submit" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-900 font-black py-5 rounded-2xl transition-all transform active:scale-[0.97] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3">
+                    <i class="fas fa-check-circle"></i>
+                    CLAIM FUNDS
+                </button>
+            </form>
+            
+            <p class="mt-8 text-center text-xs text-slate-600 font-medium">
+                <i class="fas fa-info-circle mr-1"></i> 
+                Tokens are valid for a single use only.
+            </p>
+        </div>
+    </main>
+
+    <script>
+        document.getElementById('claimForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const codeInput = document.getElementById('ref_code');
+            
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> VERIFYING...';
+
+            try {
+                const response = await fetch('/api/claim-deposit/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access')}`
+                    },
+                    body: JSON.stringify({
+                        ref_code: codeInput.value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    btn.classList.replace('bg-gradient-to-r', 'bg-emerald-500');
+                    btn.innerHTML = '<i class="fas fa-check"></i> SUCCESSFUL!';
+                    
+                    setTimeout(() => {
+                        alert(`Success! ₹${data.credited_amount} has been added to your balance.`);
+                        window.location.href = '/dashboard';
+                    }, 500);
+                } else {
+                    alert('Error: ' + (data.error || 'Invalid Reference Code'));
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> CLAIM FUNDS';
+                    codeInput.value = '';
+                }
+            } catch (err) {
+                alert('System Error: Connection failed.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> CLAIM FUNDS';
+            }
+        };
+    </script>
+</body>
+</html>

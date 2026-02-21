@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Pay | Vansh Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        .tab-active   { background: rgba(16,185,129,0.15); border-color: rgba(16,185,129,0.4); color: #10b981; }
+        .tab-inactive { background: transparent; border-color: rgba(255,255,255,0.05); color: #64748b; }
+        .sub-active   { background: rgba(16,185,129,0.12); color: #10b981; }
+        .sub-inactive { background: transparent; color: #475569; }
+        #qr-reader { border-radius: 1rem; overflow: hidden; }
+        #qr-reader video { border-radius: 1rem; width: 100% !important; }
+        #qr-reader img, #qr-reader__dashboard { display: none !important; }
+        @keyframes scan { 0%{top:2%} 100%{top:90%} }
+        .scan-line {
+            animation: scan 2s linear infinite;
+            position: absolute; left:2rem; right:2rem; height:2px;
+            background: linear-gradient(to right,transparent,#10b981,transparent);
+            box-shadow: 0 0 8px #10b981;
+        }
+        @keyframes qr-glow { 0%,100%{border-color:rgba(16,185,129,0.3)} 50%{border-color:rgba(16,185,129,0.7)} }
+        .qr-glow { animation: qr-glow 2s ease-in-out infinite; }
+        .drag-active { border-color:#10b981 !important; background:rgba(16,185,129,0.05) !important; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen">
+
+    <nav class="border-b border-slate-800 bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-2xl mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-4">
+                <a href="/dashboard" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                </a>
+                <h1 class="text-xl font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent italic">QR PAY</h1>
+            </div>
+            <span class="text-emerald-400 font-bold text-sm" id="nav-username">...</span>
+        </div>
+    </nav>
+
+    <main class="max-w-2xl mx-auto p-6 space-y-5 animate__animated animate__fadeIn">
+
+        <!-- Main Tabs -->
+        <div class="grid grid-cols-2 gap-3">
+            <button onclick="switchTab('receive')" id="tab-receive"
+                class="tab-active border rounded-2xl py-4 font-black text-sm uppercase tracking-widest transition-all">
+                <i class="fas fa-qrcode mr-2"></i>My QR
+            </button>
+            <button onclick="switchTab('scan')" id="tab-scan"
+                class="tab-inactive border rounded-2xl py-4 font-black text-sm uppercase tracking-widest transition-all">
+                <i class="fas fa-camera mr-2"></i>Scan & Pay
+            </button>
+        </div>
+
+        <!-- ═══════════ MY QR TAB ═══════════ -->
+        <div id="panel-receive">
+            <div class="glass rounded-[2.5rem] p-8 text-center space-y-6">
+                <div>
+                    <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">Your Payment QR</p>
+                    <p class="text-slate-400 text-xs mt-1">Anyone can scan this to send you money instantly</p>
+                </div>
+
+                <!-- QR Code -->
+                <div class="flex justify-center">
+                    <div class="relative p-4 bg-slate-950 rounded-3xl border-2 border-emerald-500/30 qr-glow shadow-2xl shadow-emerald-500/10">
+                        <div id="qr-loading" class="w-56 h-56 flex items-center justify-center">
+                            <i class="fas fa-spinner fa-spin text-emerald-400 text-3xl"></i>
+                        </div>
+                        <img id="my-qr-img" src="" alt="Your QR" class="w-56 h-56 rounded-2xl hidden">
+                        <div class="absolute top-2 left-2 w-7 h-7 border-t-2 border-l-2 border-emerald-400 rounded-tl-xl"></div>
+                        <div class="absolute top-2 right-2 w-7 h-7 border-t-2 border-r-2 border-emerald-400 rounded-tr-xl"></div>
+                        <div class="absolute bottom-2 left-2 w-7 h-7 border-b-2 border-l-2 border-emerald-400 rounded-bl-xl"></div>
+                        <div class="absolute bottom-2 right-2 w-7 h-7 border-b-2 border-r-2 border-emerald-400 rounded-br-xl"></div>
+                    </div>
+                </div>
+
+                <!-- User Info -->
+                <div class="space-y-1">
+                    <p class="text-2xl font-black text-white" id="qr-username">...</p>
+                    <div class="flex items-center justify-center gap-2">
+                        <p class="font-mono text-emerald-400 text-sm tracking-widest" id="qr-upi">...</p>
+                        <button onclick="copyUPI()" class="text-slate-500 hover:text-emerald-400 transition-colors">
+                            <i class="fas fa-copy text-xs"></i>
+                        </button>
+                    </div>
+                    <p class="text-slate-600 text-[10px] font-bold uppercase tracking-widest" id="qr-accnum">...</p>
+                </div>
+
+                <!-- Actions -->
+                <div class="grid grid-cols-3 gap-3">
+                    <button onclick="downloadQR()"
+                        class="bg-emerald-500/10 border border-emerald-500/20 hover:bg-emerald-500/20 text-emerald-400 font-bold py-4 rounded-2xl transition-all text-xs">
+                        <i class="fas fa-download block text-xl mb-1"></i>Save QR
+                    </button>
+                    <button onclick="shareQR()"
+                        class="bg-cyan-500/10 border border-cyan-500/20 hover:bg-cyan-500/20 text-cyan-400 font-bold py-4 rounded-2xl transition-all text-xs">
+                        <i class="fas fa-share-alt block text-xl mb-1"></i>Share
+                    </button>
+                    <button onclick="copyUPI()"
+                        class="bg-violet-500/10 border border-violet-500/20 hover:bg-violet-500/20 text-violet-400 font-bold py-4 rounded-2xl transition-all text-xs">
+                        <i class="fas fa-copy block text-xl mb-1"></i>Copy UPI
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════ SCAN TAB ═══════════ -->
+        <div id="panel-scan" class="hidden space-y-5">
+
+            <!-- Sub-tabs -->
+            <div class="glass rounded-2xl p-1.5 flex gap-1">
+                <button onclick="switchScanMode('camera')" id="sub-camera"
+                    class="sub-active flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all">
+                    <i class="fas fa-camera mr-1.5"></i>Camera
+                </button>
+                <button onclick="switchScanMode('upload')" id="sub-upload"
+                    class="sub-inactive flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all">
+                    <i class="fas fa-image mr-1.5"></i>Upload Image
+                </button>
+            </div>
+
+            <!-- Camera Mode -->
+            <div id="mode-camera" class="glass rounded-[2.5rem] p-6 space-y-4">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center">Point camera at any QR code</p>
+                <div class="relative rounded-2xl overflow-hidden bg-slate-950 min-h-[260px] flex items-center justify-center">
+                    <div id="qr-reader" class="w-full"></div>
+                    <div id="cam-placeholder" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-700 pointer-events-none">
+                        <i class="fas fa-camera text-5xl"></i>
+                        <p class="text-xs font-bold uppercase tracking-widest">Camera not started</p>
+                    </div>
+                    <div id="scan-overlay" class="absolute inset-0 pointer-events-none hidden">
+                        <div class="relative h-full overflow-hidden"><div class="scan-line"></div></div>
+                        <div class="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-emerald-400 rounded-tl-xl"></div>
+                        <div class="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-emerald-400 rounded-tr-xl"></div>
+                        <div class="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-emerald-400 rounded-bl-xl"></div>
+                        <div class="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-emerald-400 rounded-br-xl"></div>
+                    </div>
+                </div>
+                <button onclick="toggleScanner()" id="cam-btn"
+                    class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 uppercase tracking-tighter">
+                    <i class="fas fa-camera mr-2"></i>Start Camera
+                </button>
+            </div>
+
+            <!-- Upload Mode -->
+            <div id="mode-upload" class="hidden glass rounded-[2.5rem] p-6 space-y-4">
+                <p class="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] text-center">Upload a QR code image</p>
+                <div id="drop-zone"
+                    onclick="document.getElementById('qr-file-input').click()"
+                    ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+                    class="border-2 border-dashed border-slate-700 rounded-2xl p-10 text-center cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all space-y-3">
+                    <i class="fas fa-cloud-upload-alt text-4xl text-slate-600"></i>
+                    <div>
+                        <p class="font-bold text-slate-400 text-sm">Click to upload or drag & drop</p>
+                        <p class="text-slate-600 text-xs mt-1">PNG, JPG, WEBP supported</p>
+                    </div>
+                    <input type="file" id="qr-file-input" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                </div>
+                <div id="upload-preview" class="hidden text-center space-y-2">
+                    <img id="preview-img" class="max-h-48 mx-auto rounded-2xl border border-slate-700" src="" alt="">
+                    <p id="upload-scanning" class="text-emerald-400 font-bold text-xs animate-pulse hidden">
+                        <i class="fas fa-spinner fa-spin mr-1"></i>Scanning QR...
+                    </p>
+                </div>
+                <button onclick="document.getElementById('qr-file-input').click()"
+                    class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-3 rounded-2xl transition-all text-sm">
+                    <i class="fas fa-folder-open mr-2"></i>Choose Different Image
+                </button>
+            </div>
+
+            <!-- Pay Panel -->
+            <div id="pay-panel" class="hidden glass rounded-[2.5rem] p-8 space-y-5 animate__animated animate__slideInUp">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+                            <i class="fas fa-check-circle text-emerald-400 text-xl"></i>
+                        </div>
+                        <div>
+                            <p class="font-black text-white">QR Scanned!</p>
+                            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Receiver identified</p>
+                        </div>
+                    </div>
+                    <button onclick="resetAll()" class="text-slate-600 hover:text-red-400 transition-colors">
+                        <i class="fas fa-times text-lg"></i>
+                    </button>
+                </div>
+
+                <!-- Receiver -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                        <i class="fas fa-user text-emerald-400 text-sm"></i>
+                    </div>
+                    <div>
+                        <p class="font-black text-white" id="pay-name">...</p>
+                        <p class="font-mono text-emerald-400 text-xs" id="pay-upi">...</p>
+                    </div>
+                </div>
+
+                <!-- Amount -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount</label>
+                    <div class="relative mt-2">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-xl">₹</span>
+                        <input type="number" id="pay-amount" min="1" placeholder="0"
+                            class="w-full bg-slate-900 border border-slate-800 rounded-2xl pl-12 pr-5 py-4 focus:border-emerald-500 outline-none transition-all text-white text-3xl font-black">
+                    </div>
+                </div>
+
+                <!-- Quick amounts -->
+                <div class="grid grid-cols-4 gap-2">
+                    <button onclick="setAmount(100)"  class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹100</button>
+                    <button onclick="setAmount(500)"  class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹500</button>
+                    <button onclick="setAmount(1000)" class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹1K</button>
+                    <button onclick="setAmount(2000)" class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹2K</button>
+                </div>
+
+                <!-- PIN -->
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Transaction PIN</label>
+                    <input type="password" id="pay-pin" maxlength="6" placeholder="••••••" inputmode="numeric"
+                        class="w-full mt-2 bg-slate-900 border border-slate-800 rounded-2xl px-5 py-4 focus:border-emerald-500 outline-none transition-all text-emerald-400 font-mono text-center text-2xl tracking-[1em]">
+                </div>
+
+                <button onclick="processPayment()" id="pay-btn"
+                    class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-900 font-black py-5 rounded-2xl transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-tighter text-lg flex items-center justify-center gap-2">
+                    <i class="fas fa-paper-plane"></i>Pay Now
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] hidden px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl animate__animated max-w-xs text-center"></div>
+    <div id="qr-file-reader" style="display:none"></div>
+
+    <script>
+        const token = localStorage.getItem('access');
+        if (!token) window.location.href = '/login';
+
+        let html5QrCode = null;
+        let scannerRunning = false;
+        let scannedUPI = '';
+        let scannedName = '';
+        let myUpiId = '';
+
+        // ── Init ──────────────────────────────────────────
+        async function init() {
+            try {
+                const res = await fetch('/api/dashboard/', { headers: { 'Authorization': `Bearer ${token}` }});
+                if (res.status === 401) { localStorage.clear(); window.location.href = '/login'; return; }
+                const data = await res.json();
+                const acc = data.account;
+                myUpiId = acc.upi_id;
+
+                document.getElementById('nav-username').innerText = acc.user.username;
+                document.getElementById('qr-username').innerText  = acc.user.username.toUpperCase();
+                document.getElementById('qr-upi').innerText       = acc.upi_id;
+                document.getElementById('qr-accnum').innerText    = 'ACC · ' + acc.account_number;
+
+                const img = document.getElementById('my-qr-img');
+                async function loadQR() {
+                    try {
+                        const res = await fetch('/api/my-qr/', {
+                            headers: { 'Authorization': `Bearer ${token}` }
+                        });
+                        if (!res.ok) throw new Error('QR fetch failed');
+                        const blob = await res.blob();
+                        const url = URL.createObjectURL(blob);
+                        const img = document.getElementById('my-qr-img');
+                        img.src = url;
+                        img.onload = () => {
+                            document.getElementById('qr-loading').classList.add('hidden');
+                            img.classList.remove('hidden');
+                            img.classList.add('animate__animated', 'animate__zoomIn');
+                        };
+                    } catch(e) {
+                        console.error('QR load failed', e);
+                    }
+                }
+                loadQR();
+                img.onload = () => {
+                    document.getElementById('qr-loading').classList.add('hidden');
+                    img.classList.remove('hidden');
+                    img.classList.add('animate__animated','animate__zoomIn');
+                };
+            } catch(e) { console.error(e); }
+        }
+
+        // ── Tab switching ─────────────────────────────────
+        function switchTab(tab) {
+            ['receive','scan'].forEach(t => {
+                document.getElementById('panel-' + t).classList.toggle('hidden', t !== tab);
+                document.getElementById('tab-' + t).className =
+                    (t === tab ? 'tab-active' : 'tab-inactive') +
+                    ' border rounded-2xl py-4 font-black text-sm uppercase tracking-widest transition-all';
+            });
+            if (tab !== 'scan' && scannerRunning) stopScanner();
+        }
+
+        // ── Sub-tab switching ─────────────────────────────
+        function switchScanMode(mode) {
+            const isCamera = mode === 'camera';
+            document.getElementById('mode-camera').classList.toggle('hidden', !isCamera);
+            document.getElementById('mode-upload').classList.toggle('hidden', isCamera);
+            document.getElementById('sub-camera').className = (isCamera ? 'sub-active' : 'sub-inactive') + ' flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all';
+            document.getElementById('sub-upload').className = (!isCamera ? 'sub-active' : 'sub-inactive') + ' flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all';
+            if (!isCamera && scannerRunning) stopScanner();
+        }
+
+        // ── Camera ────────────────────────────────────────
+        function toggleScanner() { scannerRunning ? stopScanner() : startScanner(); }
+
+        function startScanner() {
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+                onScanSuccess, () => {}
+            ).then(() => {
+                scannerRunning = true;
+                document.getElementById('cam-placeholder').classList.add('hidden');
+                document.getElementById('scan-overlay').classList.remove('hidden');
+                const btn = document.getElementById('cam-btn');
+                btn.innerHTML = '<i class="fas fa-stop mr-2"></i>Stop Camera';
+                btn.classList.replace('bg-emerald-500','bg-red-500');
+                btn.classList.replace('hover:bg-emerald-400','hover:bg-red-400');
+                btn.classList.replace('shadow-emerald-500/20','shadow-red-500/20');
+            }).catch(() => showToast('Camera access denied', 'error'));
+        }
+
+        function stopScanner() {
+            if (html5QrCode && scannerRunning) {
+                html5QrCode.stop().then(() => {
+                    scannerRunning = false;
+                    document.getElementById('scan-overlay').classList.add('hidden');
+                    document.getElementById('cam-placeholder').classList.remove('hidden');
+                    const btn = document.getElementById('cam-btn');
+                    btn.innerHTML = '<i class="fas fa-camera mr-2"></i>Start Camera';
+                    btn.classList.replace('bg-red-500','bg-emerald-500');
+                    btn.classList.replace('hover:bg-red-400','hover:bg-emerald-400');
+                    btn.classList.replace('shadow-red-500/20','shadow-emerald-500/20');
+                });
+            }
+        }
+
+        function handleFileUpload(e) { const f = e.target.files[0]; if(f) processImageFile(f); }
+        function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-active'); }
+        function onDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-active'); }
+        function onDrop(e) {
+            e.preventDefault(); document.getElementById('drop-zone').classList.remove('drag-active');
+            const f = e.dataTransfer.files[0];
+            if (f?.type.startsWith('image/')) processImageFile(f);
+            else showToast('Drop an image file', 'error');
+        }
+
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('preview-img').src = e.target.result;
+                document.getElementById('upload-preview').classList.remove('hidden');
+                document.getElementById('upload-scanning').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            // ✅ Use instance method instead of static Html5Qrcode.scanFile
+            const tempScanner = new Html5Qrcode("qr-file-reader");
+            tempScanner.scanFileV2(file, true)
+                .then(result => {
+                    document.getElementById('upload-scanning').classList.add('hidden');
+                    onScanSuccess(result.decodedText);
+                    tempScanner.clear();
+                })
+                .catch(() => {
+                    document.getElementById('upload-scanning').classList.add('hidden');
+                    tempScanner.clear();
+                    showToast('No QR code found in image', 'error');
+                });
+        }
+
+        // ── Common scan handler ───────────────────────────
+        function onScanSuccess(decodedText) {
+            if (scannerRunning) stopScanner();
+            try {
+                let upiId = '', name = '';
+                if (decodedText.startsWith('upi://')) {
+                    const url = new URL(decodedText);
+                    upiId = url.searchParams.get('pa') || '';
+                    name  = url.searchParams.get('pn') || upiId;
+                } else {
+                    upiId = decodedText.trim();
+                    name  = upiId;
+                }
+                if (!upiId) throw new Error();
+                if (upiId === myUpiId) { showToast("Can't pay yourself!", 'error'); return; }
+
+                scannedUPI  = upiId;
+                scannedName = name;
+                document.getElementById('pay-name').innerText = name;
+                document.getElementById('pay-upi').innerText  = upiId;
+                document.getElementById('pay-panel').classList.remove('hidden');
+                document.getElementById('pay-amount').focus();
+                if (navigator.vibrate) navigator.vibrate([50,30,50]);
+            } catch { showToast('Invalid QR — not a UPI code', 'error'); }
+        }
+
+        function resetAll() {
+            scannedUPI = ''; scannedName = '';
+            document.getElementById('pay-panel').classList.add('hidden');
+            document.getElementById('pay-amount').value = '';
+            document.getElementById('pay-pin').value = '';
+            document.getElementById('upload-preview').classList.add('hidden');
+            document.getElementById('qr-file-input').value = '';
+        }
+
+        function setAmount(v) { document.getElementById('pay-amount').value = v; document.getElementById('pay-pin').focus(); }
+
+        // ── Process payment ───────────────────────────────
+        async function processPayment() {
+            const amount = document.getElementById('pay-amount').value;
+            const pin    = document.getElementById('pay-pin').value;
+            const btn    = document.getElementById('pay-btn');
+
+            if (!amount || parseFloat(amount) < 1) { showToast('Enter valid amount (min ₹1)', 'error'); return; }
+            if (!pin || pin.length !== 6)           { showToast('Enter your 6-digit PIN', 'error'); return; }
+            if (!scannedUPI)                        { showToast('Scan a QR code first', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            try {
+                const res = await fetch('/api/transfer/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ type: 'UPI', receiver_detail: scannedUPI, amount: parseFloat(amount), pin })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Payment Sent!';
+                    btn.classList.add('from-green-500','to-green-600');
+                    showToast(`₹${amount} sent to ${scannedName}!`, 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    showToast(data.error || 'Payment failed', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Pay Now';
+                }
+            } catch {
+                showToast('Network error', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Pay Now';
+            }
+        }
+
+        // ── QR actions ────────────────────────────────────
+        function downloadQR() {
+            const a = document.createElement('a');
+            a.href = document.getElementById('my-qr-img').src;
+            a.download = 'VanshBank_QR.png'; a.click();
+        }
+        async function shareQR() {
+            if (navigator.share) await navigator.share({ title: 'Pay me via Vansh Bank', text: `UPI: ${myUpiId}`, url: window.location.href });
+            else copyUPI();
+        }
+        async function copyUPI() {
+            await navigator.clipboard.writeText(myUpiId);
+            showToast('UPI ID copied!', 'success');
+        }
+
+        // ── Toast ─────────────────────────────────────────
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl animate__animated animate__slideInUp max-w-xs text-center '
+                + (type === 'success' ? 'bg-emerald-500 text-slate-900' : 'bg-red-500 text-white');
+            t.innerHTML = `<i class="fas fa-${type==='success'?'check':'exclamation'}-circle mr-2"></i>${msg}`;
+            t.classList.remove('hidden');
+            setTimeout(() => {
+                t.classList.replace('animate__slideInUp','animate__slideOutDown');
+                setTimeout(() => t.classList.add('hidden'), 400);
+            }, 3000);
+        }
+
+        init();
+    </script>
+</body>
+</html>

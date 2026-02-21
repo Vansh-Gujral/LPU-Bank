@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATM Request | LPU Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-[#0f172a] text-slate-200 font-sans min-h-screen">
+
+    <div id="successModal" class="fixed inset-0 z-[100] hidden items-center justify-center px-4 bg-slate-950/90 backdrop-blur-md">
+        <div class="bg-slate-900 border border-slate-800 max-w-sm w-full p-8 rounded-[2.5rem] text-center shadow-2xl animate__animated animate__zoomIn">
+            <div class="w-20 h-20 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-emerald-500/20">
+                <i class="fas fa-check text-3xl text-slate-900"></i>
+            </div>
+            <h2 class="text-2xl font-bold text-white mb-2">Cash Dispensed!</h2>
+            <p id="modalDesc" class="text-slate-400 text-sm mb-8 leading-relaxed">Your transaction is complete. Redirecting to dashboard...</p>
+            
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mb-4">
+                <div id="redirectProgress" class="bg-emerald-500 h-full w-full transition-all duration-[5000ms] ease-linear"></div>
+            </div>
+            <p class="text-[10px] text-slate-500 font-bold uppercase tracking-widest italic">Dashboard in 5s</p>
+        </div>
+    </div>
+
+    <nav class="border-b border-slate-800 bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex justify-between items-center">
+            <a href="/dashboard" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-all">
+                <i class="fas fa-arrow-left"></i>
+                <span class="font-bold uppercase tracking-widest text-sm">Back</span>
+            </a>
+            <h1 class="text-xl font-black tracking-tighter text-white uppercase">ATM Request</h1>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-500">
+                <i class="fas fa-university"></i>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-xl mx-auto p-6 mt-12">
+        <div id="mainContainer" class="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 md:p-12 shadow-2xl animate__animated animate__fadeInUp">
+            
+            <div id="requestFormSection">
+                <div class="text-center mb-10">
+                    <div class="inline-flex items-center justify-center w-20 h-20 bg-emerald-500/10 rounded-full mb-6 border border-emerald-500/20">
+                        <i class="fas fa-money-bill-transfer text-3xl text-emerald-500"></i>
+                    </div>
+                    <h2 class="text-3xl font-bold text-white mb-2">Request Cash</h2>
+                    <p class="text-slate-500">Generate a secure token for cardless withdrawal.</p>
+                </div>
+
+                <form id="atmForm" class="space-y-8">
+                    <div class="space-y-4">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Withdrawal Amount</label>
+                        <input type="number" id="amount" required class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white text-2xl font-bold" placeholder="0.00">
+                    </div>
+                    <div class="space-y-4">
+                        <label class="text-[10px] font-bold text-slate-500 uppercase tracking-widest ml-1">Transaction PIN</label>
+                        <input type="password" id="pin" maxlength="6" required class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-6 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white tracking-[1em] text-center text-xl" placeholder="••••••">
+                    </div>
+                    <button type="submit" id="genBtn" class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-900 font-black py-5 rounded-2xl transition-all transform active:scale-[0.97] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3">
+                        GENERATE TOKEN
+                    </button>
+                </form>
+            </div>
+
+            <div id="tokenSection" class="hidden animate__animated animate__fadeIn">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-bold text-white mb-2">Token Generated</h2>
+                    <p class="text-slate-500 text-sm">Enter this code at the ATM terminal.</p>
+                </div>
+
+                <div class="relative bg-slate-800/50 border border-slate-700 rounded-3xl p-8 mb-8 text-center group">
+                    <button onclick="copyToken()" class="absolute top-4 right-4 text-slate-500 hover:text-emerald-400 transition-colors">
+                        <i class="fas fa-copy text-lg"></i>
+                    </button>
+                    <h3 id="display-token" class="text-5xl font-black tracking-[0.4em] text-emerald-400">000000</h3>
+                </div>
+
+                <div class="flex items-center gap-3 justify-center text-emerald-500 animate-pulse text-sm font-bold uppercase tracking-widest">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    Waiting for withdrawal...
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        let checkInterval;
+
+        function copyToken() {
+            const token = document.getElementById('display-token').innerText;
+            navigator.clipboard.writeText(token);
+            const copyIcon = document.querySelector('.fa-copy');
+            copyIcon.classList.replace('fa-copy', 'fa-check');
+            setTimeout(() => copyIcon.classList.replace('fa-check', 'fa-copy'), 2000);
+        }
+
+        document.getElementById('atmForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('genBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GENERATING...';
+
+            try {
+                const response = await fetch('/api/atm-request/', {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('access')}`
+                    },
+                    body: JSON.stringify({
+                        amount: document.getElementById('amount').value,
+                        pin: document.getElementById('pin').value
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.status === 201) {
+                    document.getElementById('display-token').innerText = data.token;
+                    document.getElementById('requestFormSection').classList.add('hidden');
+                    document.getElementById('tokenSection').classList.remove('hidden');
+                    
+                    startWatching(data.token);
+                } else {
+                    alert('Error: ' + (data.error || 'Failed to generate token'));
+                    btn.disabled = false;
+                    btn.innerHTML = 'GENERATE TOKEN';
+                }
+            } catch (err) {
+                alert('Connection Error');
+                btn.disabled = false;
+            }
+        };
+
+        function startWatching(token) {
+            checkInterval = setInterval(async () => {
+                const response = await fetch(`/api/token-status/${token}/`, {
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('access')}` }
+                });
+                const data = await response.json();
+
+                if (data.is_used) {
+                    clearInterval(checkInterval);
+                    showSuccessModal();
+                }
+            }, 3000); 
+        }
+
+        function showSuccessModal() {
+            document.getElementById('successModal').classList.replace('hidden', 'flex');
+            setTimeout(() => {
+                document.getElementById('redirectProgress').style.width = '0%';
+            }, 100);
+            setTimeout(() => {
+                window.location.href = '/dashboard';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

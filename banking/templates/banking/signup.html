@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register | Vansh Bank Protocol</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .emerald-glow { box-shadow: 0 0 50px -15px rgba(16, 185, 129, 0.2); }
+        .field-error { border-color: rgb(239 68 68) !important; }
+        .error-msg { color: rgb(248 113 113); font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 4px; margin-left: 8px; display: none; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen flex items-center justify-center p-6">
+
+    <div class="max-w-md w-full glass p-10 rounded-[3rem] shadow-2xl animate__animated animate__fadeIn emerald-glow">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-black bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent italic tracking-tighter uppercase">LPU BANK</h1>
+            <p class="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-2">Create Stateless Identity</p>
+        </div>
+
+        <div id="globalError" class="hidden mb-6 bg-red-500/10 border border-red-500/30 rounded-2xl px-5 py-4 text-red-400 text-xs font-bold"></div>
+
+        <form id="signupForm" class="space-y-4" novalidate>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Username</label>
+                    <input type="text" id="username" autocomplete="username" required
+                        class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-white font-bold">
+                    <p class="error-msg" id="err-username"></p>
+                </div>
+                <div>
+                    <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">TX PIN (6-Digit)</label>
+                    <input type="password" id="transaction_pin" maxlength="6" minlength="6" inputmode="numeric" required
+                        class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-emerald-400 font-mono text-center tracking-[0.5em]"
+                        placeholder="••••••">
+                    <p class="error-msg" id="err-transaction_pin"></p>
+                </div>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Phone Number</label>
+                <input type="tel" id="phone_number" required
+                    class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-white">
+                <p class="error-msg" id="err-phone_number"></p>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Email Address</label>
+                <input type="email" id="email" required
+                    class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-white">
+                <p class="error-msg" id="err-email"></p>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Access Key</label>
+                <input type="password" id="password1" required autocomplete="new-password"
+                    class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-white tracking-widest">
+                <p class="error-msg" id="err-password1"></p>
+            </div>
+
+            <div>
+                <label class="text-[10px] font-black text-slate-500 uppercase ml-2 tracking-widest">Confirm Key</label>
+                <input type="password" id="password2" required autocomplete="new-password"
+                    class="w-full bg-slate-900 border border-slate-800 rounded-2xl px-6 py-4 focus:border-emerald-500 outline-none transition-all text-white tracking-widest">
+                <p class="error-msg" id="err-password2"></p>
+            </div>
+
+            <button type="submit" id="subBtn"
+                class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black py-5 rounded-2xl transition-all shadow-xl shadow-emerald-500/20 uppercase tracking-tighter mt-4">
+                <i class="fas fa-shield-alt mr-2"></i>Authorize & Initialize
+            </button>
+
+            <p class="text-center text-slate-600 text-xs font-bold pt-2">
+                Already initialized? 
+                <a href="/login" class="text-emerald-400 hover:text-emerald-300 transition-colors">Access Protocol</a>
+            </p>
+        </form>
+    </div>
+
+    <script>
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('input', () => clearFieldError(input.id));
+        });
+
+        function showFieldError(fieldId, message) {
+            const input = document.getElementById(fieldId);
+            const errEl = document.getElementById('err-' + fieldId);
+            if (input) input.classList.add('field-error');
+            if (errEl) {
+                errEl.innerText = message;
+                errEl.style.display = 'block';
+            }
+        }
+
+        function clearFieldError(fieldId) {
+            const input = document.getElementById(fieldId);
+            const errEl = document.getElementById('err-' + fieldId);
+            if (input) input.classList.remove('field-error');
+            if (errEl) errEl.style.display = 'none';
+        }
+
+        function showGlobalError(message) {
+            const el = document.getElementById('globalError');
+            el.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>' + message;
+            el.classList.remove('hidden');
+        }
+
+        function clearAllErrors() {
+            document.getElementById('globalError').classList.add('hidden');
+            document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('input').forEach(el => el.classList.remove('field-error'));
+        }
+
+        function validateForm(payload) {
+            let valid = true;
+
+            if (!payload.username || payload.username.length < 3) {
+                showFieldError('username', 'Min 3 characters required');
+                valid = false;
+            }
+
+            if (!payload.phone_number || !/^\d{10}$/.test(payload.phone_number)) {
+                showFieldError('phone_number', 'Enter a valid 10-digit number');
+                valid = false;
+            }
+
+            if (!payload.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) {
+                showFieldError('email', 'Enter a valid email address');
+                valid = false;
+            }
+
+            if (!payload.transaction_pin || !/^\d{6}$/.test(payload.transaction_pin)) {
+                showFieldError('transaction_pin', 'Must be exactly 6 digits');
+                valid = false;
+            }
+
+            if (!payload.password1 || payload.password1.length < 8) {
+                showFieldError('password1', 'Min 8 characters required');
+                valid = false;
+            }
+
+            if (payload.password1 !== payload.password2) {
+                showFieldError('password2', 'Keys do not match');
+                valid = false;
+            }
+
+            return valid;
+        }
+
+        function handleServerErrors(errors) {
+            let hasFieldError = false;
+
+            const fieldMap = {
+                'username': 'username',
+                'phone_number': 'phone_number',
+                'email': 'email',
+                'transaction_pin': 'transaction_pin',
+                'password': 'password1',
+                'password1': 'password1',
+                'password2': 'password2',
+            };
+
+            for (const [key, messages] of Object.entries(errors)) {
+                const msg = Array.isArray(messages) ? messages[0] : messages;
+                const fieldId = fieldMap[key];
+
+                if (fieldId) {
+                    showFieldError(fieldId, msg);
+                    hasFieldError = true;
+                } else {
+                    showGlobalError(msg);
+                }
+            }
+
+            if (!hasFieldError && !errors.non_field_errors) {
+                showGlobalError("Registration failed. Please check your details.");
+            }
+        }
+
+        document.getElementById('signupForm').onsubmit = async (e) => {
+            e.preventDefault();
+            clearAllErrors();
+
+            const btn = document.getElementById('subBtn');
+
+            const payload = {
+                username: document.getElementById('username').value.trim(),
+                phone_number: document.getElementById('phone_number').value.trim(),
+                email: document.getElementById('email').value.trim(),
+                transaction_pin: document.getElementById('transaction_pin').value,
+                password1: document.getElementById('password1').value,
+                password2: document.getElementById('password2').value
+            };
+
+            if (!validateForm(payload)) return;
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>INITIALIZING NODE...';
+
+            try {
+                const response = await fetch('/api/register/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>NODE ACTIVE — REDIRECTING';
+                    btn.classList.replace('bg-emerald-500', 'bg-green-500');
+                    setTimeout(() => window.location.href = '/login', 1200);
+                } else {
+                    handleServerErrors(data);
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i>Authorize & Initialize';
+                }
+            } catch (err) {
+                showGlobalError("Protocol unreachable. Check server status.");
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-shield-alt mr-2"></i>Authorize & Initialize';
+            }
+        };
+    </script>
+</body>
+</html>

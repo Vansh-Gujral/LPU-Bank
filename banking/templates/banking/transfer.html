@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transfer Funds | Vansh Bank</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;500;700&display=swap');
+        body { font-family: 'Space Grotesk', sans-serif; background-color: #020617; }
+        .glass { background: rgba(15,23,42,0.6); backdrop-filter: blur(12px); border: 1px solid rgba(255,255,255,0.05); }
+        #qr-reader-transfer { border-radius: 1rem; overflow: hidden; }
+        #qr-reader-transfer video { border-radius: 1rem; width: 100% !important; }
+        #qr-reader-transfer img, #qr-reader-transfer__dashboard { display: none !important; }
+        @keyframes scan { 0%{top:2%} 100%{top:90%} }
+        .scan-line {
+            animation: scan 2s linear infinite;
+            position: absolute; left: 2rem; right: 2rem;
+            height: 2px;
+            background: linear-gradient(to right, transparent, #10b981, transparent);
+            box-shadow: 0 0 8px #10b981;
+        }
+        .drag-active { border-color: #10b981 !important; background: rgba(16,185,129,0.05) !important; }
+        .type-active   { background: #10b981; color: #0f172a; }
+        .type-inactive { background: transparent; color: #94a3b8; }
+        .type-inactive:hover { color: white; }
+    </style>
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen">
+
+    <nav class="border-b border-slate-800 bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-xl mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/dashboard" class="flex items-center gap-2 text-emerald-400 hover:text-emerald-300 transition-all">
+                <i class="fas fa-arrow-left"></i>
+                <span class="font-bold uppercase tracking-widest text-sm">Dashboard</span>
+            </a>
+            <h1 class="text-xl font-black tracking-tighter text-white">SECURE TRANSFER</h1>
+            <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center">
+                <i class="fas fa-shield-alt text-emerald-500 text-xs"></i>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-xl mx-auto p-6 mt-6 space-y-5 animate__animated animate__fadeIn">
+
+        <!-- Transfer Card -->
+        <div class="bg-slate-900 border border-slate-800 rounded-[2.5rem] p-8 shadow-2xl space-y-6">
+
+            <!-- Transfer Type Tabs -->
+            <div class="flex p-1.5 bg-slate-800 rounded-2xl gap-1">
+                <button onclick="setType('UPI')" id="btn-UPI" class="type-active flex-1 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wide">
+                    <i class="fas fa-at mr-1"></i>UPI
+                </button>
+                <button onclick="setType('ACC')" id="btn-ACC" class="type-inactive flex-1 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wide">
+                    <i class="fas fa-hashtag mr-1"></i>Account
+                </button>
+                <button onclick="setType('MOBILE')" id="btn-MOBILE" class="type-inactive flex-1 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wide">
+                    <i class="fas fa-mobile-alt mr-1"></i>Mobile
+                </button>
+                <button onclick="setType('QR')" id="btn-QR" class="type-inactive flex-1 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wide">
+                    <i class="fas fa-qrcode mr-1"></i>QR
+                </button>
+            </div>
+
+            <!-- Normal Transfer Form (UPI / ACC / MOBILE) -->
+            <div id="normal-form">
+                <form id="transferForm" class="space-y-5">
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1" id="detail-label">UPI ID</label>
+                        <div class="relative">
+                            <i id="detail-icon" class="fas fa-at absolute left-5 top-1/2 -translate-y-1/2 text-slate-500"></i>
+                            <input type="text" id="receiver_detail" required
+                                class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl pl-12 pr-5 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white placeholder-slate-600"
+                                placeholder="username@vansh">
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Amount (INR)</label>
+                        <div class="relative">
+                            <span class="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-lg">₹</span>
+                            <input type="number" id="amount" required step="0.01" min="1"
+                                class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl pl-12 pr-5 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white text-2xl font-black"
+                                placeholder="0.00">
+                        </div>
+                        <div class="grid grid-cols-4 gap-2 pt-1">
+                            <button type="button" onclick="setAmount(100)"  class="bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹100</button>
+                            <button type="button" onclick="setAmount(500)"  class="bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹500</button>
+                            <button type="button" onclick="setAmount(1000)" class="bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹1K</button>
+                            <button type="button" onclick="setAmount(2000)" class="bg-slate-800 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹2K</button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <label class="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Transaction PIN</label>
+                        <input type="password" id="pin" maxlength="6" required inputmode="numeric"
+                            class="w-full bg-slate-800/50 border border-slate-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white tracking-[1em] text-center text-xl"
+                            placeholder="••••••">
+                    </div>
+
+                    <button type="submit" id="transfer-btn"
+                        class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-900 font-black py-5 rounded-2xl transition-all active:scale-[0.97] shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-3 mt-2">
+                        <i class="fas fa-paper-plane"></i>
+                        CONFIRM TRANSFER
+                    </button>
+                </form>
+            </div>
+
+            <div id="qr-form" class="hidden space-y-5">
+
+                <div class="glass rounded-2xl p-1.5 flex gap-1">
+                    <button onclick="switchScanMode('camera')" id="sub-camera"
+                        class="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-emerald-500/10 text-emerald-400">
+                        <i class="fas fa-camera mr-1.5"></i>Camera
+                    </button>
+                    <button onclick="switchScanMode('upload')" id="sub-upload"
+                        class="flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500">
+                        <i class="fas fa-image mr-1.5"></i>Upload Image
+                    </button>
+                </div>
+
+                <div id="scan-camera-mode" class="space-y-3">
+                    <div class="relative rounded-2xl overflow-hidden bg-slate-950 min-h-[260px] flex items-center justify-center">
+                        <div id="qr-reader-transfer" class="w-full"></div>
+                        <div id="cam-placeholder" class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-700 pointer-events-none">
+                            <i class="fas fa-camera text-5xl"></i>
+                            <p class="text-xs font-bold uppercase tracking-widest">Camera not started</p>
+                        </div>
+                        <div id="scan-overlay" class="absolute inset-0 pointer-events-none hidden">
+                            <div class="relative h-full overflow-hidden">
+                                <div class="scan-line"></div>
+                            </div>
+                            <div class="absolute top-4 left-4 w-8 h-8 border-t-2 border-l-2 border-emerald-400 rounded-tl-xl"></div>
+                            <div class="absolute top-4 right-4 w-8 h-8 border-t-2 border-r-2 border-emerald-400 rounded-tr-xl"></div>
+                            <div class="absolute bottom-4 left-4 w-8 h-8 border-b-2 border-l-2 border-emerald-400 rounded-bl-xl"></div>
+                            <div class="absolute bottom-4 right-4 w-8 h-8 border-b-2 border-r-2 border-emerald-400 rounded-br-xl"></div>
+                        </div>
+                    </div>
+                    <button onclick="toggleScanner()" id="cam-btn"
+                        class="w-full bg-emerald-500 hover:bg-emerald-400 text-slate-900 font-black py-4 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 uppercase tracking-tighter">
+                        <i class="fas fa-camera mr-2"></i>Start Camera
+                    </button>
+                </div>
+
+                <div id="scan-upload-mode" class="hidden space-y-3">
+                    <div id="drop-zone"
+                        onclick="document.getElementById('qr-file').click()"
+                        ondragover="onDragOver(event)" ondragleave="onDragLeave(event)" ondrop="onDrop(event)"
+                        class="border-2 border-dashed border-slate-700 rounded-2xl p-10 text-center cursor-pointer hover:border-emerald-500/50 hover:bg-emerald-500/5 transition-all space-y-3">
+                        <i class="fas fa-cloud-upload-alt text-4xl text-slate-600"></i>
+                        <div>
+                            <p class="font-bold text-slate-400 text-sm">Click to upload or drag & drop</p>
+                            <p class="text-slate-600 text-xs mt-1">PNG, JPG, WEBP supported</p>
+                        </div>
+                        <input type="file" id="qr-file" accept="image/*" class="hidden" onchange="handleFileUpload(event)">
+                    </div>
+                    <div id="upload-preview" class="hidden text-center space-y-2">
+                        <img id="preview-img" class="max-h-48 mx-auto rounded-2xl border border-slate-700" src="" alt="QR Preview">
+                        <p id="upload-scanning" class="text-emerald-400 font-bold text-xs animate-pulse hidden">
+                            <i class="fas fa-spinner fa-spin mr-1"></i>Scanning...
+                        </p>
+                    </div>
+                </div>
+
+                <div id="qr-receiver-card" class="hidden bg-slate-800/60 border border-emerald-500/20 rounded-2xl p-4 space-y-4 animate__animated animate__fadeIn">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                                <i class="fas fa-check-circle text-emerald-400"></i>
+                            </div>
+                            <div>
+                                <p class="font-black text-white text-sm" id="qr-recv-name">...</p>
+                                <p class="font-mono text-emerald-400 text-xs" id="qr-recv-upi">...</p>
+                            </div>
+                        </div>
+                        <button onclick="clearScan()" class="text-slate-600 hover:text-red-400 transition-colors text-sm">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+
+                    <div class="relative">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-emerald-500 font-black text-lg">₹</span>
+                        <input type="number" id="qr-amount" min="1" placeholder="0"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-2xl pl-12 pr-5 py-4 focus:outline-none focus:border-emerald-500 transition-all text-white text-2xl font-black">
+                    </div>
+                    <div class="grid grid-cols-4 gap-2">
+                        <button type="button" onclick="setQRAmount(100)"  class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹100</button>
+                        <button type="button" onclick="setQRAmount(500)"  class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹500</button>
+                        <button type="button" onclick="setQRAmount(1000)" class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹1K</button>
+                        <button type="button" onclick="setQRAmount(2000)" class="bg-slate-900 hover:bg-slate-700 text-slate-400 text-xs font-bold py-2 rounded-xl transition-all">₹2K</button>
+                    </div>
+
+                    <input type="password" id="qr-pin" maxlength="6" placeholder="••••••" inputmode="numeric"
+                        class="w-full bg-slate-900 border border-slate-700 rounded-2xl px-5 py-4 focus:outline-none focus:border-emerald-500 transition-all text-emerald-400 font-mono text-center text-xl tracking-[1em]">
+
+                    <button onclick="processQRPayment()" id="qr-pay-btn"
+                        class="w-full bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-900 font-black py-5 rounded-2xl transition-all shadow-lg shadow-emerald-500/20 uppercase tracking-tighter flex items-center justify-center gap-2">
+                        <i class="fas fa-paper-plane"></i>Pay Now
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] hidden px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl animate__animated max-w-xs text-center"></div>
+    <div id="qr-file-reader" style="display:none"></div>
+
+    <script>
+        const token = localStorage.getItem('access');
+        if (!token) window.location.href = '/login';
+
+        let selectedType = 'UPI';
+        let scannerRunning = false;
+        let html5QrCode = null;
+        let scannedUPI = '';
+        let scannedName = '';
+
+        // ── Transfer Type ──
+        function setType(type) {
+            selectedType = type;
+            ['UPI','ACC','MOBILE','QR'].forEach(t => {
+                document.getElementById('btn-' + t).className =
+                    (t === type ? 'type-active' : 'type-inactive') +
+                    ' flex-1 py-3 rounded-xl text-xs font-black transition-all uppercase tracking-wide';
+            });
+
+            const isQR = type === 'QR';
+            document.getElementById('normal-form').classList.toggle('hidden', isQR);
+            document.getElementById('qr-form').classList.toggle('hidden', !isQR);
+
+            if (!isQR && scannerRunning) stopScanner();
+
+            const label = document.getElementById('detail-label');
+            const input = document.getElementById('receiver_detail');
+            const icon  = document.getElementById('detail-icon');
+            if (type === 'UPI')    { label.innerText = 'UPI ID';         input.placeholder = 'username@vansh'; icon.className = 'fas fa-at absolute left-5 top-1/2 -translate-y-1/2 text-slate-500'; }
+            if (type === 'ACC')    { label.innerText = 'Account Number'; input.placeholder = '1234567890';     icon.className = 'fas fa-hashtag absolute left-5 top-1/2 -translate-y-1/2 text-slate-500'; }
+            if (type === 'MOBILE') { label.innerText = 'Mobile Number';  input.placeholder = '9876543210';     icon.className = 'fas fa-mobile-alt absolute left-5 top-1/2 -translate-y-1/2 text-slate-500'; }
+        }
+
+        // ── Scan mode sub-tab ──
+        function switchScanMode(mode) {
+            const isCamera = mode === 'camera';
+            document.getElementById('scan-camera-mode').classList.toggle('hidden', !isCamera);
+            document.getElementById('scan-upload-mode').classList.toggle('hidden', isCamera);
+            document.getElementById('sub-camera').className = (isCamera
+                ? 'flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-emerald-500/10 text-emerald-400'
+                : 'flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500');
+            document.getElementById('sub-upload').className = (!isCamera
+                ? 'flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all bg-emerald-500/10 text-emerald-400'
+                : 'flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-widest transition-all text-slate-500');
+            if (!isCamera && scannerRunning) stopScanner();
+        }
+
+        // ── Camera Scanner ──
+        function toggleScanner() {
+            scannerRunning ? stopScanner() : startScanner();
+        }
+
+        function startScanner() {
+            if (!html5QrCode) html5QrCode = new Html5Qrcode("qr-reader-transfer");
+            html5QrCode.start(
+                { facingMode: "environment" },
+                { fps: 15, qrbox: { width: 220, height: 220 }, aspectRatio: 1.0 },
+                onScanSuccess,
+                () => {}
+            ).then(() => {
+                scannerRunning = true;
+                document.getElementById('cam-placeholder').classList.add('hidden');
+                document.getElementById('scan-overlay').classList.remove('hidden');
+                const btn = document.getElementById('cam-btn');
+                btn.innerHTML = '<i class="fas fa-stop mr-2"></i>Stop Camera';
+                btn.classList.replace('bg-emerald-500', 'bg-red-500');
+                btn.classList.replace('hover:bg-emerald-400', 'hover:bg-red-400');
+                btn.classList.replace('shadow-emerald-500/20', 'shadow-red-500/20');
+            }).catch(() => showToast('Camera access denied', 'error'));
+        }
+
+        function stopScanner() {
+            if (html5QrCode && scannerRunning) {
+                html5QrCode.stop().then(() => {
+                    scannerRunning = false;
+                    document.getElementById('scan-overlay').classList.add('hidden');
+                    document.getElementById('cam-placeholder').classList.remove('hidden');
+                    const btn = document.getElementById('cam-btn');
+                    btn.innerHTML = '<i class="fas fa-camera mr-2"></i>Start Camera';
+                    btn.classList.replace('bg-red-500', 'bg-emerald-500');
+                    btn.classList.replace('hover:bg-red-400', 'hover:bg-emerald-400');
+                    btn.classList.replace('shadow-red-500/20', 'shadow-emerald-500/20');
+                });
+            }
+        }
+
+        // ── Upload Scanner ──
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if (file) processImageFile(file);
+        }
+
+        function onDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-active'); }
+        function onDragLeave()  { document.getElementById('drop-zone').classList.remove('drag-active'); }
+        function onDrop(e) {
+            e.preventDefault();
+            document.getElementById('drop-zone').classList.remove('drag-active');
+            const file = e.dataTransfer.files[0];
+            if (file?.type.startsWith('image/')) processImageFile(file);
+            else showToast('Please drop an image file', 'error');
+        }
+
+        function processImageFile(file) {
+            const reader = new FileReader();
+            reader.onload = e => {
+                document.getElementById('preview-img').src = e.target.result;
+                document.getElementById('upload-preview').classList.remove('hidden');
+                document.getElementById('upload-scanning').classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+
+            Html5Qrcode.scanFile(file, true)
+                .then(text => {
+                    document.getElementById('upload-scanning').classList.add('hidden');
+                    onScanSuccess(text);
+                })
+                .catch(() => {
+                    document.getElementById('upload-scanning').classList.add('hidden');
+                    showToast('No QR code found in image', 'error');
+                });
+        }
+
+        // ── Common scan handler ──
+        function onScanSuccess(decodedText) {
+            if (scannerRunning) stopScanner();
+            try {
+                let upiId = '', name = '';
+                if (decodedText.startsWith('upi://')) {
+                    const url = new URL(decodedText);
+                    upiId = url.searchParams.get('pa') || '';
+                    name  = url.searchParams.get('pn') || upiId;
+                } else {
+                    upiId = decodedText.trim();
+                    name  = upiId;
+                }
+                if (!upiId) throw new Error('No UPI ID');
+
+                scannedUPI  = upiId;
+                scannedName = name;
+                document.getElementById('qr-recv-name').innerText = name;
+                document.getElementById('qr-recv-upi').innerText  = upiId;
+                document.getElementById('qr-receiver-card').classList.remove('hidden');
+                document.getElementById('qr-amount').focus();
+                if (navigator.vibrate) navigator.vibrate([50,30,50]);
+            } catch {
+                showToast('Invalid QR — not a UPI code', 'error');
+            }
+        }
+
+        function clearScan() {
+            scannedUPI = ''; scannedName = '';
+            document.getElementById('qr-receiver-card').classList.add('hidden');
+            document.getElementById('qr-amount').value = '';
+            document.getElementById('qr-pin').value = '';
+            document.getElementById('upload-preview').classList.add('hidden');
+            document.getElementById('qr-file').value = '';
+        }
+
+        // ── Quick amounts ──
+        function setAmount(v)   { document.getElementById('amount').value = v; document.getElementById('pin').focus(); }
+        function setQRAmount(v) { document.getElementById('qr-amount').value = v; document.getElementById('qr-pin').focus(); }
+
+        // ── Normal Transfer Submit ──
+        document.getElementById('transferForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('transfer-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            const payload = {
+                type: selectedType,
+                receiver_detail: document.getElementById('receiver_detail').value.trim(),
+                amount: document.getElementById('amount').value,
+                pin: document.getElementById('pin').value
+            };
+
+            try {
+                const res = await fetch('/api/transfer/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Transfer Sent!';
+                    btn.classList.add('from-green-500', 'to-green-600');
+                    showToast('Transfer successful!', 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    showToast(data.error || Object.values(data).flat()[0] || 'Transfer failed', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>CONFIRM TRANSFER';
+                }
+            } catch {
+                showToast('Connection failed', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>CONFIRM TRANSFER';
+            }
+        };
+
+        // ── QR Payment Submit ──
+        async function processQRPayment() {
+            const amount = document.getElementById('qr-amount').value;
+            const pin    = document.getElementById('qr-pin').value;
+            const btn    = document.getElementById('qr-pay-btn');
+
+            if (!amount || parseFloat(amount) < 1) { showToast('Enter a valid amount (min ₹1)', 'error'); return; }
+            if (!pin || pin.length !== 6)           { showToast('Enter your 6-digit PIN', 'error'); return; }
+            if (!scannedUPI)                        { showToast('Scan a QR code first', 'error'); return; }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>Processing...';
+
+            try {
+                const res = await fetch('/api/transfer/', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                    body: JSON.stringify({ type: 'UPI', receiver_detail: scannedUPI, amount: parseFloat(amount), pin })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    btn.innerHTML = '<i class="fas fa-check mr-2"></i>Payment Sent!';
+                    showToast(`₹${amount} sent to ${scannedName}!`, 'success');
+                    setTimeout(() => window.location.href = '/dashboard', 2000);
+                } else {
+                    showToast(data.error || 'Payment failed', 'error');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Pay Now';
+                }
+            } catch {
+                showToast('Network error', 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-paper-plane mr-2"></i>Pay Now';
+            }
+        }
+
+        // ── Toast ──
+        function showToast(msg, type) {
+            const t = document.getElementById('toast');
+            t.className = 'fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-2xl animate__animated animate__slideInUp max-w-xs text-center '
+                + (type === 'success' ? 'bg-emerald-500 text-slate-900' : 'bg-red-500 text-white');
+            t.innerHTML = `<i class="fas fa-${type==='success'?'check':'exclamation'}-circle mr-2"></i>${msg}`;
+            t.classList.remove('hidden');
+            setTimeout(() => {
+                t.classList.replace('animate__slideInUp','animate__slideOutDown');
+                setTimeout(() => t.classList.add('hidden'), 400);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
